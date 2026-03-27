@@ -1,0 +1,1436 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<title>GIL Dashboard Industriel</title>
+<style>
+:root {
+  --bg:#f6f8fb; --card:#ffffff; --border:#dfe6ef; --text:#1f2937; --muted:#6b7280;
+  --blue:#2f6fed; --green:#16a34a; --red:#dc2626; --orange:#d97706; --shadow:0 8px 24px rgba(15,23,42,.08);
+}
+* { box-sizing:border-box; }
+html { scroll-behavior:smooth; }
+body { margin:0; background:var(--bg); color:var(--text); font:14px/1.45 Arial, Helvetica, sans-serif; }
+.page { width:1120px; margin:0 auto; padding:22px 22px 34px; }
+.topbar {
+  display:flex; justify-content:space-between; align-items:center; gap:20px; margin-bottom:18px;
+}
+.brand { display:flex; align-items:center; gap:12px; }
+.logo { background:var(--green); color:white; font-weight:700; border-radius:10px; padding:8px 14px; }
+h1 { margin:0; font-size:24px; }
+.meta { color:var(--muted); font-size:13px; text-align:right; }
+.kpis { display:grid; grid-template-columns:repeat(6,1fr); gap:14px; margin:18px 0; }
+.kpi { background:var(--card); border:1px solid var(--border); border-radius:16px; box-shadow:var(--shadow); padding:14px; }
+.kpi .label { color:var(--muted); font-size:12px; text-transform:uppercase; letter-spacing:.04em; margin-bottom:8px; }
+.kpi .value { font-size:28px; font-weight:700; }
+.kpi .sub { color:var(--muted); font-size:12px; margin-top:4px; }
+.kpi.blue { border-top:5px solid var(--blue); } .kpi.green { border-top:5px solid var(--green); }
+.kpi.red { border-top:5px solid var(--red); } .kpi.orange { border-top:5px solid var(--orange); }
+.section { background:var(--card); border:1px solid var(--border); border-radius:18px; box-shadow:var(--shadow); padding:18px; margin-top:16px; }
+.section h2 { margin:0 0 14px; font-size:18px; }
+.grid-2 { display:grid; grid-template-columns:1.25fr .75fr; gap:16px; }
+.folder-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+.folder-card { border:1px solid var(--border); background:#fbfcfe; border-radius:12px; padding:12px; }
+.folder-name { font-weight:700; margin-bottom:4px; } .folder-stats { color:var(--muted); font-size:12px; }
+.folder-ko { color:var(--red); font-weight:700; }
+.chart-wrap { min-height:300px; }
+.chart-svg { width:100%; height:auto; display:block; }
+.svg-title { font-size:14px; font-weight:700; fill:#111827; }
+.svg-label { font-size:11px; fill:#374151; }
+.svg-value, .svg-legend { font-size:11px; fill:#4b5563; }
+.donut-center-big { font-size:26px; font-weight:700; fill:#111827; }
+.donut-center-small { font-size:11px; fill:#6b7280; }
+.table-wrap { overflow-x:auto; }
+table { width:100%; border-collapse:collapse; }
+th, td { padding:10px 8px; border-bottom:1px solid #edf2f7; vertical-align:top; }
+th { background:#f8fafc; color:#334155; text-align:left; font-size:12px; text-transform:uppercase; letter-spacing:.03em; }
+.center { text-align:center; }
+.mini-badge { display:inline-block; min-width:44px; padding:5px 10px; border-radius:999px; color:white; font-size:12px; font-weight:700; }
+.mini-badge.good { background:var(--green); } .mini-badge.bad { background:var(--red); }
+.meta-pill { display:inline-block; border:1px solid var(--border); border-radius:999px; padding:6px 10px; font-size:12px; margin-left:6px; }
+.meta-pill.bad { background:#fee2e2; border-color:#fecaca; color:#991b1b; }
+.flow-link, .anchor-link { color:var(--blue); text-decoration:none; font-weight:700; }
+.subtle { color:var(--muted); font-size:12px; margin-top:3px; }
+.note { color:var(--muted); font-size:13px; margin-top:6px; }
+.detail-card { background:var(--card); border:1px solid var(--border); border-radius:18px; box-shadow:var(--shadow); padding:18px; margin-top:16px; page-break-inside:avoid; }
+.detail-title-row { display:flex; justify-content:space-between; gap:12px; align-items:flex-start; }
+.detail-title-row h3 { margin:0 0 4px; font-size:17px; }
+.detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; margin-top:14px; }
+.detail-box, .runs-box { border:1px solid var(--border); border-radius:14px; padding:14px; background:#fcfdff; }
+.detail-box h4, .runs-box h4 { margin:0 0 10px; font-size:15px; }
+.detail-item { border:1px solid var(--border); border-radius:10px; padding:10px; margin-bottom:10px; background:white; }
+.failed-item { border-color:#fecaca; background:#fff7f7; }
+.pass-item { border-color:#bbf7d0; background:#f7fff9; }
+.detail-head { display:flex; justify-content:space-between; gap:10px; font-size:13px; }
+.detail-msg { color:#7f1d1d; font-size:12px; margin-top:6px; }
+.empty-state { color:var(--muted); font-style:italic; }
+.nested-table th, .nested-table td { font-size:12px; }
+.footer { color:var(--muted); font-size:11px; margin-top:18px; text-align:center; }
+@media print {
+  body { background:white; }
+  .page { width:auto; margin:0; padding:12mm; }
+  .section, .detail-card, .kpi { box-shadow:none; }
+  a { color:#111827; text-decoration:none; }
+}
+
+.toolbar { display:flex; gap:10px; flex-wrap:wrap; margin:10px 0 16px; }
+.toolbar button { background:white; border:1px solid var(--border); color:var(--text); border-radius:10px; padding:8px 12px; cursor:pointer; box-shadow:var(--shadow); }
+.toolbar button.primary { background:var(--blue); color:white; border-color:var(--blue); }
+.toolbar .hint { color:var(--muted); font-size:12px; margin-left:auto; align-self:center; }
+.detail-card { display:none; }
+.detail-card.active { display:block; }
+.focus-ring { box-shadow:0 0 0 3px rgba(47,111,237,.25) !important; }
+.hidden-by-filter { display:none !important; }
+.active-row { background:#eef4ff; }
+.quick-actions { margin-top:8px; display:flex; gap:8px; flex-wrap:wrap; }
+.quick-actions a, .close-detail { display:inline-block; border:1px solid var(--border); border-radius:999px; padding:6px 10px; font-size:12px; text-decoration:none; color:var(--text); background:white; }
+.close-detail { cursor:pointer; }
+@media print {
+  .toolbar, .close-detail, .quick-actions { display:none !important; }
+  .detail-card { display:block !important; }
+}
+
+</style>
+</head>
+<body>
+<div class="page">
+  <div class="topbar">
+    <div class="brand">
+      <div class="logo">GIL</div>
+      <div>
+        <h1>Dashboard industriel GIL</h1>
+        <div class="note">Version compacte type rapport d'origine • regroupement des flux répétées • liens vers détails OK / KO</div>
+      </div>
+    </div>
+    <div class="meta">
+      <div><strong>Collection :</strong> Contrôle Services  API_to_API</div>
+      <div><strong>Environnement :</strong> DEV</div>
+      <div><strong>Durée :</strong> 2543 ms • <strong>Temps moyen :</strong> 67.9 ms</div>
+    </div>
+  </div>
+
+  <div class="toolbar">
+    <button class="primary" onclick="gilShowAllDetails()">Afficher tous les détails</button>
+    <button onclick="gilHideAllDetails()">Masquer les détails</button>
+    <button onclick="gilFilterItems('all')">Tout</button>
+    <button onclick="gilFilterItems('ko')">KO uniquement</button>
+    <button onclick="gilFilterItems('ok')">OK uniquement</button>
+    <button onclick="window.print()">Exporter PDF</button>
+    <div class="hint">Clique sur un flux ou sur les liens OK / KO pour ouvrir le niveau de détail.</div>
+  </div>
+
+  <section class="kpis">
+    <div class="kpi blue"><div class="label">Flux exécutés</div><div class="value">17</div><div class="sub">10 flux groupés</div></div>
+    <div class="kpi green"><div class="label">Assertions OK</div><div class="value">143</div><div class="sub">64.7% de réussite</div></div>
+    <div class="kpi red"><div class="label">Assertions KO</div><div class="value">78</div><div class="sub">sur 221 assertions</div></div>
+    <div class="kpi orange"><div class="label">Temps moyen</div><div class="value">67.9</div><div class="sub">min 49 ms • max 248 ms</div></div>
+    <div class="kpi blue"><div class="label">Skippés / Pending</div><div class="value">0</div><div class="sub">Aucun test en attente</div></div>
+    <div class="kpi green"><div class="label">Dossiers</div><div class="value">8</div><div class="sub">couverture multi-domaines</div></div>
+  </section>
+
+  <section class="section">
+    <h2>Répartition par dossier</h2>
+    <div class="folder-grid">
+      
+      <div class="folder-card">
+        <div class="folder-name">Managed exchange protocol API</div>
+        <div class="folder-stats">5 flux • 65 assertions • <span class="folder-ko">18 KO</span></div>
+      </div>
+    
+      <div class="folder-card">
+        <div class="folder-name">Managed exchange protocol API Copy</div>
+        <div class="folder-stats">5 flux • 65 assertions • <span class="folder-ko">18 KO</span></div>
+      </div>
+    
+      <div class="folder-card">
+        <div class="folder-name">Aliasing</div>
+        <div class="folder-stats">1 flux • 13 assertions • <span class="folder-ko">6 KO</span></div>
+      </div>
+    
+      <div class="folder-card">
+        <div class="folder-name">Aliasing Copy</div>
+        <div class="folder-stats">1 flux • 13 assertions • <span class="folder-ko">6 KO</span></div>
+      </div>
+    
+      <div class="folder-card">
+        <div class="folder-name">Token Provider</div>
+        <div class="folder-stats">1 flux • 13 assertions • <span class="folder-ko">6 KO</span></div>
+      </div>
+    
+      <div class="folder-card">
+        <div class="folder-name">Token Provider Copy</div>
+        <div class="folder-stats">1 flux • 13 assertions • <span class="folder-ko">6 KO</span></div>
+      </div>
+    
+      <div class="folder-card">
+        <div class="folder-name">Access Management</div>
+        <div class="folder-stats">2 flux • 26 assertions • <span class="folder-ko">12 KO</span></div>
+      </div>
+    
+      <div class="folder-card">
+        <div class="folder-name">Encryption/ Decryption</div>
+        <div class="folder-stats">1 flux • 13 assertions • <span class="folder-ko">6 KO</span></div>
+      </div>
+    
+    </div>
+  </section>
+
+  <section class="section grid-2">
+    <div>
+      <h2>Flux groupés par volume de KO</h2>
+      <div class="chart-wrap"><svg viewBox="0 0 520 280" class="chart-svg" role="img" aria-label="Bar chart">
+<text x="180" y="12" class="svg-title">Flux groupés par volume de KO</text>
+<text x="0" y="26.2" class="svg-label">Autorisation auprès d&#x27;apigee / authentific…</text><rect x="180" y="15" width="172.3" height="14.0" rx="5" fill="#16a34a"></rect><rect x="352.3" y="15" width="147.7" height="14.0" rx="5" fill="#dc2626"></rect><text x="508.0" y="26.2" class="svg-value">26 tests / 12 KO</text><text x="0" y="52.2" class="svg-label">Création d&#x27;un alias en base_ISS_CMS4_001 (…</text><rect x="180" y="41" width="172.3" height="14.0" rx="5" fill="#16a34a"></rect><rect x="352.3" y="41" width="147.7" height="14.0" rx="5" fill="#dc2626"></rect><text x="508.0" y="52.2" class="svg-value">26 tests / 12 KO</text><text x="0" y="78.2" class="svg-label">Valider le format du payload du flux_ISS_C…</text><rect x="180" y="67" width="172.3" height="14.0" rx="5" fill="#16a34a"></rect><rect x="352.3" y="67" width="147.7" height="14.0" rx="5" fill="#dc2626"></rect><text x="508.0" y="78.2" class="svg-value">26 tests / 12 KO</text><text x="0" y="104.2" class="svg-label">API Management_ISS_CMS4_001 (API)</text><rect x="180" y="93" width="86.2" height="14.0" rx="5" fill="#16a34a"></rect><rect x="266.2" y="93" width="73.8" height="14.0" rx="5" fill="#dc2626"></rect><text x="348.0" y="104.2" class="svg-value">13 tests / 6 KO</text><text x="0" y="130.2" class="svg-label">APIGEE transmet la réponse a GIL_ISS_CMS4_…</text><rect x="180" y="119" width="246.2" height="14.0" rx="5" fill="#16a34a"></rect><rect x="426.2" y="119" width="73.8" height="14.0" rx="5" fill="#dc2626"></rect><text x="508.0" y="130.2" class="svg-value">26 tests / 6 KO</text><text x="0" y="156.2" class="svg-label">Appel du service de chiffrement / déchiffr…</text><rect x="180" y="145" width="86.2" height="14.0" rx="5" fill="#16a34a"></rect><rect x="266.2" y="145" width="73.8" height="14.0" rx="5" fill="#dc2626"></rect><text x="348.0" y="156.2" class="svg-value">13 tests / 6 KO</text><text x="0" y="182.2" class="svg-label">Convert_flux_to_FLOW GIL_ISS_CMS4_001 (API…</text><rect x="180" y="171" width="246.2" height="14.0" rx="5" fill="#16a34a"></rect><rect x="426.2" y="171" width="73.8" height="14.0" rx="5" fill="#dc2626"></rect><text x="508.0" y="182.2" class="svg-value">26 tests / 6 KO</text><text x="0" y="208.2" class="svg-label">Gil appelle ESTREEM_APIGEE_ISS_CMS4_001 (A…</text><rect x="180" y="197" width="246.2" height="14.0" rx="5" fill="#16a34a"></rect><rect x="426.2" y="197" width="73.8" height="14.0" rx="5" fill="#dc2626"></rect><text x="508.0" y="208.2" class="svg-value">26 tests / 6 KO</text><text x="0" y="234.2" class="svg-label">Identity &amp; Access management_ISS_CMS4_001 …</text><rect x="180" y="223" width="86.2" height="14.0" rx="5" fill="#16a34a"></rect><rect x="266.2" y="223" width="73.8" height="14.0" rx="5" fill="#dc2626"></rect><text x="348.0" y="234.2" class="svg-value">13 tests / 6 KO</text><text x="0" y="260.2" class="svg-label">Réception Flux Entrant_ISS_CMS4_001 (API)</text><rect x="180" y="249" width="246.2" height="14.0" rx="5" fill="#16a34a"></rect><rect x="426.2" y="249" width="73.8" height="14.0" rx="5" fill="#dc2626"></rect><text x="508.0" y="260.2" class="svg-value">26 tests / 6 KO</text>
+<rect x="180" y="262" width="14" height="14" rx="3" fill="#16a34a"></rect><text x="200" y="274" class="svg-legend">OK</text>
+<rect x="250" y="262" width="14" height="14" rx="3" fill="#dc2626"></rect><text x="270" y="274" class="svg-legend">KO</text>
+</svg></div>
+    </div>
+    <div>
+      <h2>Répartition globale des assertions</h2>
+      <div class="chart-wrap"><svg viewBox="0 0 320 280" class="chart-svg" role="img" aria-label="Donut chart">
+<text x="20" y="22" class="svg-title">Répartition globale des assertions</text>
+<circle cx="150" cy="140" r="82" fill="none" stroke="#e5e7eb" stroke-width="32"></circle>
+<circle cx="150" cy="140" r="82" fill="none" stroke="#16a34a" stroke-width="32" stroke-dasharray="333.38 181.84" stroke-dashoffset="0.00" transform="rotate(-90 150 140)"></circle><circle cx="150" cy="140" r="82" fill="none" stroke="#dc2626" stroke-width="32" stroke-dasharray="181.84 333.38" stroke-dashoffset="-333.38" transform="rotate(-90 150 140)"></circle>
+<text x="150" y="136" text-anchor="middle" class="donut-center-big">64.7%</text>
+<text x="150" y="160" text-anchor="middle" class="donut-center-small">taux de réussite</text>
+<rect x="22" y="236" width="14" height="14" rx="3" fill="#16a34a"></rect><text x="44" y="248" class="svg-legend">OK : 143</text>
+<rect x="122" y="236" width="14" height="14" rx="3" fill="#dc2626"></rect><text x="144" y="248" class="svg-legend">KO : 78</text>
+</svg></div>
+    </div>
+  </section>
+
+  <section class="section">
+    <h2>Vue groupée des flux</h2>
+    <div class="note">Les flux répétées sont regroupées sur une même ligne. Les liens OK et KO pointent vers les listes d'assertions détaillées plus bas.</div>
+    <div class="table-wrap">
+      <table>
+        <thead>
+          <tr>
+            <th>Flux groupé</th>
+            <th class="center">Occurrences</th>
+            <th class="center">Codes</th>
+            <th class="center">Temps moyen</th>
+            <th class="center">Assertions</th>
+            <th class="center">OK</th>
+            <th class="center">KO</th>
+            <th class="center">Gravité</th>
+            <th class="center">Lien OK</th>
+            <th class="center">Lien KO</th>
+          </tr>
+        </thead>
+        <tbody>
+          
+      <tr>
+        <td><a href="#group-r-ception-flux-entrant-iss-cms4-001-api" class="flow-link">Réception Flux Entrant_ISS_CMS4_001 (API)</a><div class="subtle">Managed exchange protocol API • Managed exchange protocol API Copy</div></td>
+        <td class="center">2</td>
+        <td class="center">201</td>
+        <td class="center">151 ms</td>
+        <td class="center">26</td>
+        <td class="center"><span class="mini-badge good">20</span></td>
+        <td class="center"><span class="mini-badge bad">6</span></td>
+        <td class="center"><span class="mini-badge bad">Majeure</span></td>
+        <td class="center"><a href="#ok-r-ception-flux-entrant-iss-cms4-001-api" class="anchor-link">OK</a></td>
+        <td class="center"><a href="#ko-r-ception-flux-entrant-iss-cms4-001-api" class="anchor-link">KO</a></td>
+      </tr>
+    
+      <tr>
+        <td><a href="#group-convert-flux-to-flow-gil-iss-cms4-001-api" class="flow-link">Convert_flux_to_FLOW GIL_ISS_CMS4_001 (API)</a><div class="subtle">Managed exchange protocol API • Managed exchange protocol API Copy</div></td>
+        <td class="center">2</td>
+        <td class="center">201</td>
+        <td class="center">54.5 ms</td>
+        <td class="center">26</td>
+        <td class="center"><span class="mini-badge good">20</span></td>
+        <td class="center"><span class="mini-badge bad">6</span></td>
+        <td class="center"><span class="mini-badge bad">Majeure</span></td>
+        <td class="center"><a href="#ok-convert-flux-to-flow-gil-iss-cms4-001-api" class="anchor-link">OK</a></td>
+        <td class="center"><a href="#ko-convert-flux-to-flow-gil-iss-cms4-001-api" class="anchor-link">KO</a></td>
+      </tr>
+    
+      <tr>
+        <td><a href="#group-gil-appelle-estreem-apigee-iss-cms4-001-api" class="flow-link">Gil appelle ESTREEM_APIGEE_ISS_CMS4_001 (API)</a><div class="subtle">Managed exchange protocol API • Managed exchange protocol API Copy</div></td>
+        <td class="center">2</td>
+        <td class="center">201</td>
+        <td class="center">55.5 ms</td>
+        <td class="center">26</td>
+        <td class="center"><span class="mini-badge good">20</span></td>
+        <td class="center"><span class="mini-badge bad">6</span></td>
+        <td class="center"><span class="mini-badge bad">Majeure</span></td>
+        <td class="center"><a href="#ok-gil-appelle-estreem-apigee-iss-cms4-001-api" class="anchor-link">OK</a></td>
+        <td class="center"><a href="#ko-gil-appelle-estreem-apigee-iss-cms4-001-api" class="anchor-link">KO</a></td>
+      </tr>
+    
+      <tr>
+        <td><a href="#group-apigee-transmet-la-r-ponse-a-gil-iss-cms4-001-api" class="flow-link">APIGEE transmet la réponse a GIL_ISS_CMS4_001 (API)</a><div class="subtle">Managed exchange protocol API • Managed exchange protocol API Copy</div></td>
+        <td class="center">2</td>
+        <td class="center">201</td>
+        <td class="center">58.5 ms</td>
+        <td class="center">26</td>
+        <td class="center"><span class="mini-badge good">20</span></td>
+        <td class="center"><span class="mini-badge bad">6</span></td>
+        <td class="center"><span class="mini-badge bad">Majeure</span></td>
+        <td class="center"><a href="#ok-apigee-transmet-la-r-ponse-a-gil-iss-cms4-001-api" class="anchor-link">OK</a></td>
+        <td class="center"><a href="#ko-apigee-transmet-la-r-ponse-a-gil-iss-cms4-001-api" class="anchor-link">KO</a></td>
+      </tr>
+    
+      <tr>
+        <td><a href="#group-valider-le-format-du-payload-du-flux-iss-cms4-001-api" class="flow-link">Valider le format du payload du flux_ISS_CMS4_001 (API)</a><div class="subtle">Managed exchange protocol API • Managed exchange protocol API Copy</div></td>
+        <td class="center">2</td>
+        <td class="center">201</td>
+        <td class="center">58.5 ms</td>
+        <td class="center">26</td>
+        <td class="center"><span class="mini-badge good">14</span></td>
+        <td class="center"><span class="mini-badge bad">12</span></td>
+        <td class="center"><span class="mini-badge bad">Critique</span></td>
+        <td class="center"><a href="#ok-valider-le-format-du-payload-du-flux-iss-cms4-001-api" class="anchor-link">OK</a></td>
+        <td class="center"><a href="#ko-valider-le-format-du-payload-du-flux-iss-cms4-001-api" class="anchor-link">KO</a></td>
+      </tr>
+    
+      <tr>
+        <td><a href="#group-cr-ation-d-un-alias-en-base-iss-cms4-001-api" class="flow-link">Création d&#x27;un alias en base_ISS_CMS4_001 (API)</a><div class="subtle">Aliasing • Aliasing Copy</div></td>
+        <td class="center">2</td>
+        <td class="center">201</td>
+        <td class="center">60.5 ms</td>
+        <td class="center">26</td>
+        <td class="center"><span class="mini-badge good">14</span></td>
+        <td class="center"><span class="mini-badge bad">12</span></td>
+        <td class="center"><span class="mini-badge bad">Critique</span></td>
+        <td class="center"><a href="#ok-cr-ation-d-un-alias-en-base-iss-cms4-001-api" class="anchor-link">OK</a></td>
+        <td class="center"><a href="#ko-cr-ation-d-un-alias-en-base-iss-cms4-001-api" class="anchor-link">KO</a></td>
+      </tr>
+    
+      <tr>
+        <td><a href="#group-autorisation-aupr-s-d-apigee-authentification-via-token-iss-cms4-001-api" class="flow-link">Autorisation auprès d&#x27;apigee / authentification via token_ISS_CMS4_001 (API)</a><div class="subtle">Token Provider • Token Provider Copy</div></td>
+        <td class="center">2</td>
+        <td class="center">201</td>
+        <td class="center">59 ms</td>
+        <td class="center">26</td>
+        <td class="center"><span class="mini-badge good">14</span></td>
+        <td class="center"><span class="mini-badge bad">12</span></td>
+        <td class="center"><span class="mini-badge bad">Critique</span></td>
+        <td class="center"><a href="#ok-autorisation-aupr-s-d-apigee-authentification-via-token-iss-cms4-001-api" class="anchor-link">OK</a></td>
+        <td class="center"><a href="#ko-autorisation-aupr-s-d-apigee-authentification-via-token-iss-cms4-001-api" class="anchor-link">KO</a></td>
+      </tr>
+    
+      <tr>
+        <td><a href="#group-api-management-iss-cms4-001-api" class="flow-link">API Management_ISS_CMS4_001 (API)</a><div class="subtle">Access Management</div></td>
+        <td class="center">1</td>
+        <td class="center">201</td>
+        <td class="center">49 ms</td>
+        <td class="center">13</td>
+        <td class="center"><span class="mini-badge good">7</span></td>
+        <td class="center"><span class="mini-badge bad">6</span></td>
+        <td class="center"><span class="mini-badge bad">Majeure</span></td>
+        <td class="center"><a href="#ok-api-management-iss-cms4-001-api" class="anchor-link">OK</a></td>
+        <td class="center"><a href="#ko-api-management-iss-cms4-001-api" class="anchor-link">KO</a></td>
+      </tr>
+    
+      <tr>
+        <td><a href="#group-identity-access-management-iss-cms4-001-api" class="flow-link">Identity &amp; Access management_ISS_CMS4_001 (API)</a><div class="subtle">Access Management</div></td>
+        <td class="center">1</td>
+        <td class="center">201</td>
+        <td class="center">55 ms</td>
+        <td class="center">13</td>
+        <td class="center"><span class="mini-badge good">7</span></td>
+        <td class="center"><span class="mini-badge bad">6</span></td>
+        <td class="center"><span class="mini-badge bad">Majeure</span></td>
+        <td class="center"><a href="#ok-identity-access-management-iss-cms4-001-api" class="anchor-link">OK</a></td>
+        <td class="center"><a href="#ko-identity-access-management-iss-cms4-001-api" class="anchor-link">KO</a></td>
+      </tr>
+    
+      <tr>
+        <td><a href="#group-appel-du-service-de-chiffrement-d-chiffrrement-du-panchiffr-iss-cms4-001-api" class="flow-link">Appel du service de chiffrement / déchiffrrement du panchiffré_ISS_CMS4_001 (API)</a><div class="subtle">Encryption/ Decryption</div></td>
+        <td class="center">1</td>
+        <td class="center">201</td>
+        <td class="center">55 ms</td>
+        <td class="center">13</td>
+        <td class="center"><span class="mini-badge good">7</span></td>
+        <td class="center"><span class="mini-badge bad">6</span></td>
+        <td class="center"><span class="mini-badge bad">Majeure</span></td>
+        <td class="center"><a href="#ok-appel-du-service-de-chiffrement-d-chiffrrement-du-panchiffr-iss-cms4-001-api" class="anchor-link">OK</a></td>
+        <td class="center"><a href="#ko-appel-du-service-de-chiffrement-d-chiffrrement-du-panchiffr-iss-cms4-001-api" class="anchor-link">KO</a></td>
+      </tr>
+    
+        </tbody>
+      </table>
+    </div>
+  </section>
+
+  
+      <section class="detail-card" id="group-r-ception-flux-entrant-iss-cms4-001-api">
+        <div class="detail-title-row">
+          <div>
+            <h3>Réception Flux Entrant_ISS_CMS4_001 (API)</h3>
+            <div class="subtle">Occurrences groupées : 2 • Dossiers : Managed exchange protocol API • Managed exchange protocol API Copy • Codes réponse : 201</div>
+          </div>
+          <div><div class="quick-actions"><a href="#" onclick="gilShowSection(this); return false;">Ouvrir</a><a href="#" onclick="gilFocusBox(this,'ok'); return false;">Zone OK</a><a href="#" onclick="gilFocusBox(this,'ko'); return false;">Zone KO</a><span class="close-detail" onclick="gilCloseSection(this)">Fermer</span></div></div><div class="detail-meta">
+            <span class="meta-pill">Temps moyen 151 ms</span>
+            <span class="meta-pill">Taille moyenne 463 B</span>
+            <span class="meta-pill bad">6 KO</span>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-box" id="ok-r-ception-flux-entrant-iss-cms4-001-api">
+            <h4>Assertions OK</h4>
+            
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Status code is 201</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response time &lt; 2s</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response is JSON</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Should return 400 if bad request</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Status OK or ERROR</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Business KPI - Valid response</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>HTTP 201 OK</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response time OK</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response not empty</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>No error in response</strong><span>2 OK</span></div>
+            </div>
+          </div>
+          <div class="detail-box" id="ko-r-ception-flux-entrant-iss-cms4-001-api">
+            <h4>Assertions KO</h4>
+            
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Response has cardId</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected { card: { …(8) }, …(2) } to have property &#x27;cardId&#x27;</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>cardId not empty</strong><span>2 KO</span></div>
+              <div class="detail-msg">.empty was passed non-string primitive undefined</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Check response structure</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected { card: { …(8) }, …(2) } to have property &#x27;status&#x27;</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="runs-box">
+          <h4>Occurrences détaillées</h4>
+          <table class="nested-table">
+            <thead>
+              <tr><th>Dossier</th><th>Code</th><th>Temps</th><th>Taille</th><th>Statut</th><th>Assertions</th><th>KO</th></tr>
+            </thead>
+            <tbody>
+              
+          <tr>
+            <td>Managed exchange protocol API</td>
+            <td>201</td>
+            <td>248 ms</td>
+            <td>463 B</td>
+            <td><span class="mini-badge bad">KO</span></td>
+            <td>13</td>
+            <td>3</td>
+          </tr>
+        
+          <tr>
+            <td>Managed exchange protocol API Copy</td>
+            <td>201</td>
+            <td>54 ms</td>
+            <td>463 B</td>
+            <td><span class="mini-badge bad">KO</span></td>
+            <td>13</td>
+            <td>3</td>
+          </tr>
+        
+            </tbody>
+          </table>
+        </div>
+      </section>
+    
+      <section class="detail-card" id="group-convert-flux-to-flow-gil-iss-cms4-001-api">
+        <div class="detail-title-row">
+          <div>
+            <h3>Convert_flux_to_FLOW GIL_ISS_CMS4_001 (API)</h3>
+            <div class="subtle">Occurrences groupées : 2 • Dossiers : Managed exchange protocol API • Managed exchange protocol API Copy • Codes réponse : 201</div>
+          </div>
+          <div><div class="quick-actions"><a href="#" onclick="gilShowSection(this); return false;">Ouvrir</a><a href="#" onclick="gilFocusBox(this,'ok'); return false;">Zone OK</a><a href="#" onclick="gilFocusBox(this,'ko'); return false;">Zone KO</a><span class="close-detail" onclick="gilCloseSection(this)">Fermer</span></div></div><div class="detail-meta">
+            <span class="meta-pill">Temps moyen 54.5 ms</span>
+            <span class="meta-pill">Taille moyenne 463 B</span>
+            <span class="meta-pill bad">6 KO</span>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-box" id="ok-convert-flux-to-flow-gil-iss-cms4-001-api">
+            <h4>Assertions OK</h4>
+            
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Status code is 201</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response time &lt; 2s</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response is JSON</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Should return 400 if bad request</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Status OK or ERROR</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Business KPI - Valid response</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>HTTP 201 OK</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response time OK</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response not empty</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>No error in response</strong><span>2 OK</span></div>
+            </div>
+          </div>
+          <div class="detail-box" id="ko-convert-flux-to-flow-gil-iss-cms4-001-api">
+            <h4>Assertions KO</h4>
+            
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Response has cardId</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected { card: { …(8) }, …(2) } to have property &#x27;cardId&#x27;</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>cardId not empty</strong><span>2 KO</span></div>
+              <div class="detail-msg">.empty was passed non-string primitive undefined</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Check response structure</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected { card: { …(8) }, …(2) } to have property &#x27;status&#x27;</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="runs-box">
+          <h4>Occurrences détaillées</h4>
+          <table class="nested-table">
+            <thead>
+              <tr><th>Dossier</th><th>Code</th><th>Temps</th><th>Taille</th><th>Statut</th><th>Assertions</th><th>KO</th></tr>
+            </thead>
+            <tbody>
+              
+          <tr>
+            <td>Managed exchange protocol API</td>
+            <td>201</td>
+            <td>59 ms</td>
+            <td>463 B</td>
+            <td><span class="mini-badge bad">KO</span></td>
+            <td>13</td>
+            <td>3</td>
+          </tr>
+        
+          <tr>
+            <td>Managed exchange protocol API Copy</td>
+            <td>201</td>
+            <td>50 ms</td>
+            <td>463 B</td>
+            <td><span class="mini-badge bad">KO</span></td>
+            <td>13</td>
+            <td>3</td>
+          </tr>
+        
+            </tbody>
+          </table>
+        </div>
+      </section>
+    
+      <section class="detail-card" id="group-gil-appelle-estreem-apigee-iss-cms4-001-api">
+        <div class="detail-title-row">
+          <div>
+            <h3>Gil appelle ESTREEM_APIGEE_ISS_CMS4_001 (API)</h3>
+            <div class="subtle">Occurrences groupées : 2 • Dossiers : Managed exchange protocol API • Managed exchange protocol API Copy • Codes réponse : 201</div>
+          </div>
+          <div><div class="quick-actions"><a href="#" onclick="gilShowSection(this); return false;">Ouvrir</a><a href="#" onclick="gilFocusBox(this,'ok'); return false;">Zone OK</a><a href="#" onclick="gilFocusBox(this,'ko'); return false;">Zone KO</a><span class="close-detail" onclick="gilCloseSection(this)">Fermer</span></div></div><div class="detail-meta">
+            <span class="meta-pill">Temps moyen 55.5 ms</span>
+            <span class="meta-pill">Taille moyenne 463 B</span>
+            <span class="meta-pill bad">6 KO</span>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-box" id="ok-gil-appelle-estreem-apigee-iss-cms4-001-api">
+            <h4>Assertions OK</h4>
+            
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Status code is 201</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response time &lt; 2s</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response is JSON</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Should return 400 if bad request</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Status OK or ERROR</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Business KPI - Valid response</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>HTTP 201 OK</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response time OK</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response not empty</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>No error in response</strong><span>2 OK</span></div>
+            </div>
+          </div>
+          <div class="detail-box" id="ko-gil-appelle-estreem-apigee-iss-cms4-001-api">
+            <h4>Assertions KO</h4>
+            
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Response has cardId</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected { card: { …(8) }, …(2) } to have property &#x27;cardId&#x27;</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>cardId not empty</strong><span>2 KO</span></div>
+              <div class="detail-msg">.empty was passed non-string primitive undefined</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Check response structure</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected { card: { …(8) }, …(2) } to have property &#x27;status&#x27;</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="runs-box">
+          <h4>Occurrences détaillées</h4>
+          <table class="nested-table">
+            <thead>
+              <tr><th>Dossier</th><th>Code</th><th>Temps</th><th>Taille</th><th>Statut</th><th>Assertions</th><th>KO</th></tr>
+            </thead>
+            <tbody>
+              
+          <tr>
+            <td>Managed exchange protocol API</td>
+            <td>201</td>
+            <td>57 ms</td>
+            <td>463 B</td>
+            <td><span class="mini-badge bad">KO</span></td>
+            <td>13</td>
+            <td>3</td>
+          </tr>
+        
+          <tr>
+            <td>Managed exchange protocol API Copy</td>
+            <td>201</td>
+            <td>54 ms</td>
+            <td>463 B</td>
+            <td><span class="mini-badge bad">KO</span></td>
+            <td>13</td>
+            <td>3</td>
+          </tr>
+        
+            </tbody>
+          </table>
+        </div>
+      </section>
+    
+      <section class="detail-card" id="group-apigee-transmet-la-r-ponse-a-gil-iss-cms4-001-api">
+        <div class="detail-title-row">
+          <div>
+            <h3>APIGEE transmet la réponse a GIL_ISS_CMS4_001 (API)</h3>
+            <div class="subtle">Occurrences groupées : 2 • Dossiers : Managed exchange protocol API • Managed exchange protocol API Copy • Codes réponse : 201</div>
+          </div>
+          <div><div class="quick-actions"><a href="#" onclick="gilShowSection(this); return false;">Ouvrir</a><a href="#" onclick="gilFocusBox(this,'ok'); return false;">Zone OK</a><a href="#" onclick="gilFocusBox(this,'ko'); return false;">Zone KO</a><span class="close-detail" onclick="gilCloseSection(this)">Fermer</span></div></div><div class="detail-meta">
+            <span class="meta-pill">Temps moyen 58.5 ms</span>
+            <span class="meta-pill">Taille moyenne 463 B</span>
+            <span class="meta-pill bad">6 KO</span>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-box" id="ok-apigee-transmet-la-r-ponse-a-gil-iss-cms4-001-api">
+            <h4>Assertions OK</h4>
+            
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Status code is 201</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response time &lt; 2s</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response is JSON</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Should return 400 if bad request</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Status OK or ERROR</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Business KPI - Valid response</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>HTTP 201 OK</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response time OK</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response not empty</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>No error in response</strong><span>2 OK</span></div>
+            </div>
+          </div>
+          <div class="detail-box" id="ko-apigee-transmet-la-r-ponse-a-gil-iss-cms4-001-api">
+            <h4>Assertions KO</h4>
+            
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Response has cardId</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected { card: { …(8) }, …(2) } to have property &#x27;cardId&#x27;</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>cardId not empty</strong><span>2 KO</span></div>
+              <div class="detail-msg">.empty was passed non-string primitive undefined</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Check response structure</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected { card: { …(8) }, …(2) } to have property &#x27;status&#x27;</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="runs-box">
+          <h4>Occurrences détaillées</h4>
+          <table class="nested-table">
+            <thead>
+              <tr><th>Dossier</th><th>Code</th><th>Temps</th><th>Taille</th><th>Statut</th><th>Assertions</th><th>KO</th></tr>
+            </thead>
+            <tbody>
+              
+          <tr>
+            <td>Managed exchange protocol API</td>
+            <td>201</td>
+            <td>59 ms</td>
+            <td>463 B</td>
+            <td><span class="mini-badge bad">KO</span></td>
+            <td>13</td>
+            <td>3</td>
+          </tr>
+        
+          <tr>
+            <td>Managed exchange protocol API Copy</td>
+            <td>201</td>
+            <td>58 ms</td>
+            <td>463 B</td>
+            <td><span class="mini-badge bad">KO</span></td>
+            <td>13</td>
+            <td>3</td>
+          </tr>
+        
+            </tbody>
+          </table>
+        </div>
+      </section>
+    
+      <section class="detail-card" id="group-valider-le-format-du-payload-du-flux-iss-cms4-001-api">
+        <div class="detail-title-row">
+          <div>
+            <h3>Valider le format du payload du flux_ISS_CMS4_001 (API)</h3>
+            <div class="subtle">Occurrences groupées : 2 • Dossiers : Managed exchange protocol API • Managed exchange protocol API Copy • Codes réponse : 201</div>
+          </div>
+          <div><div class="quick-actions"><a href="#" onclick="gilShowSection(this); return false;">Ouvrir</a><a href="#" onclick="gilFocusBox(this,'ok'); return false;">Zone OK</a><a href="#" onclick="gilFocusBox(this,'ko'); return false;">Zone KO</a><span class="close-detail" onclick="gilCloseSection(this)">Fermer</span></div></div><div class="detail-meta">
+            <span class="meta-pill">Temps moyen 58.5 ms</span>
+            <span class="meta-pill">Taille moyenne 463 B</span>
+            <span class="meta-pill bad">12 KO</span>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-box" id="ok-valider-le-format-du-payload-du-flux-iss-cms4-001-api">
+            <h4>Assertions OK</h4>
+            
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response time &lt; 2s</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response is JSON</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Should return 400 if bad request</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Status OK or ERROR</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response time OK</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response not empty</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>No error in response</strong><span>2 OK</span></div>
+            </div>
+          </div>
+          <div class="detail-box" id="ko-valider-le-format-du-payload-du-flux-iss-cms4-001-api">
+            <h4>Assertions KO</h4>
+            
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Status code is 201</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected response to have status code 200 but got 201</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Response has agreementId</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected { card: { …(8) }, …(2) } to have property &#x27;agreementId&#x27;</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>AgreementId not empty</strong><span>2 KO</span></div>
+              <div class="detail-msg">.empty was passed non-string primitive undefined</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Check response structure</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected { card: { …(8) }, …(2) } to have property &#x27;status&#x27;</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Business KPI - Valid response</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected 201 to deeply equal 200</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>HTTP 200 OK</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected response to have status code 200 but got 201</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="runs-box">
+          <h4>Occurrences détaillées</h4>
+          <table class="nested-table">
+            <thead>
+              <tr><th>Dossier</th><th>Code</th><th>Temps</th><th>Taille</th><th>Statut</th><th>Assertions</th><th>KO</th></tr>
+            </thead>
+            <tbody>
+              
+          <tr>
+            <td>Managed exchange protocol API</td>
+            <td>201</td>
+            <td>57 ms</td>
+            <td>463 B</td>
+            <td><span class="mini-badge bad">KO</span></td>
+            <td>13</td>
+            <td>6</td>
+          </tr>
+        
+          <tr>
+            <td>Managed exchange protocol API Copy</td>
+            <td>201</td>
+            <td>60 ms</td>
+            <td>463 B</td>
+            <td><span class="mini-badge bad">KO</span></td>
+            <td>13</td>
+            <td>6</td>
+          </tr>
+        
+            </tbody>
+          </table>
+        </div>
+      </section>
+    
+      <section class="detail-card" id="group-cr-ation-d-un-alias-en-base-iss-cms4-001-api">
+        <div class="detail-title-row">
+          <div>
+            <h3>Création d&#x27;un alias en base_ISS_CMS4_001 (API)</h3>
+            <div class="subtle">Occurrences groupées : 2 • Dossiers : Aliasing • Aliasing Copy • Codes réponse : 201</div>
+          </div>
+          <div><div class="quick-actions"><a href="#" onclick="gilShowSection(this); return false;">Ouvrir</a><a href="#" onclick="gilFocusBox(this,'ok'); return false;">Zone OK</a><a href="#" onclick="gilFocusBox(this,'ko'); return false;">Zone KO</a><span class="close-detail" onclick="gilCloseSection(this)">Fermer</span></div></div><div class="detail-meta">
+            <span class="meta-pill">Temps moyen 60.5 ms</span>
+            <span class="meta-pill">Taille moyenne 463 B</span>
+            <span class="meta-pill bad">12 KO</span>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-box" id="ok-cr-ation-d-un-alias-en-base-iss-cms4-001-api">
+            <h4>Assertions OK</h4>
+            
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response time &lt; 2s</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response is JSON</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Should return 400 if bad request</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Status OK or ERROR</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response time OK</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response not empty</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>No error in response</strong><span>2 OK</span></div>
+            </div>
+          </div>
+          <div class="detail-box" id="ko-cr-ation-d-un-alias-en-base-iss-cms4-001-api">
+            <h4>Assertions KO</h4>
+            
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Status code is 201</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected response to have status code 200 but got 201</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Response has agreementId</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected { card: { …(8) }, …(2) } to have property &#x27;agreementId&#x27;</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>AgreementId not empty</strong><span>2 KO</span></div>
+              <div class="detail-msg">.empty was passed non-string primitive undefined</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Check response structure</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected { card: { …(8) }, …(2) } to have property &#x27;status&#x27;</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Business KPI - Valid response</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected 201 to deeply equal 200</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>HTTP 200 OK</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected response to have status code 200 but got 201</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="runs-box">
+          <h4>Occurrences détaillées</h4>
+          <table class="nested-table">
+            <thead>
+              <tr><th>Dossier</th><th>Code</th><th>Temps</th><th>Taille</th><th>Statut</th><th>Assertions</th><th>KO</th></tr>
+            </thead>
+            <tbody>
+              
+          <tr>
+            <td>Aliasing</td>
+            <td>201</td>
+            <td>58 ms</td>
+            <td>463 B</td>
+            <td><span class="mini-badge bad">KO</span></td>
+            <td>13</td>
+            <td>6</td>
+          </tr>
+        
+          <tr>
+            <td>Aliasing Copy</td>
+            <td>201</td>
+            <td>63 ms</td>
+            <td>463 B</td>
+            <td><span class="mini-badge bad">KO</span></td>
+            <td>13</td>
+            <td>6</td>
+          </tr>
+        
+            </tbody>
+          </table>
+        </div>
+      </section>
+    
+      <section class="detail-card" id="group-autorisation-aupr-s-d-apigee-authentification-via-token-iss-cms4-001-api">
+        <div class="detail-title-row">
+          <div>
+            <h3>Autorisation auprès d&#x27;apigee / authentification via token_ISS_CMS4_001 (API)</h3>
+            <div class="subtle">Occurrences groupées : 2 • Dossiers : Token Provider • Token Provider Copy • Codes réponse : 201</div>
+          </div>
+          <div><div class="quick-actions"><a href="#" onclick="gilShowSection(this); return false;">Ouvrir</a><a href="#" onclick="gilFocusBox(this,'ok'); return false;">Zone OK</a><a href="#" onclick="gilFocusBox(this,'ko'); return false;">Zone KO</a><span class="close-detail" onclick="gilCloseSection(this)">Fermer</span></div></div><div class="detail-meta">
+            <span class="meta-pill">Temps moyen 59 ms</span>
+            <span class="meta-pill">Taille moyenne 463 B</span>
+            <span class="meta-pill bad">12 KO</span>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-box" id="ok-autorisation-aupr-s-d-apigee-authentification-via-token-iss-cms4-001-api">
+            <h4>Assertions OK</h4>
+            
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response time &lt; 2s</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response is JSON</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Should return 400 if bad request</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Status OK or ERROR</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response time OK</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response not empty</strong><span>2 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>No error in response</strong><span>2 OK</span></div>
+            </div>
+          </div>
+          <div class="detail-box" id="ko-autorisation-aupr-s-d-apigee-authentification-via-token-iss-cms4-001-api">
+            <h4>Assertions KO</h4>
+            
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Status code is 201</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected response to have status code 200 but got 201</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Response has agreementId</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected { card: { …(8) }, …(2) } to have property &#x27;agreementId&#x27;</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>AgreementId not empty</strong><span>2 KO</span></div>
+              <div class="detail-msg">.empty was passed non-string primitive undefined</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Check response structure</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected { card: { …(8) }, …(2) } to have property &#x27;status&#x27;</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Business KPI - Valid response</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected 201 to deeply equal 200</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>HTTP 200 OK</strong><span>2 KO</span></div>
+              <div class="detail-msg">expected response to have status code 200 but got 201</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="runs-box">
+          <h4>Occurrences détaillées</h4>
+          <table class="nested-table">
+            <thead>
+              <tr><th>Dossier</th><th>Code</th><th>Temps</th><th>Taille</th><th>Statut</th><th>Assertions</th><th>KO</th></tr>
+            </thead>
+            <tbody>
+              
+          <tr>
+            <td>Token Provider</td>
+            <td>201</td>
+            <td>63 ms</td>
+            <td>463 B</td>
+            <td><span class="mini-badge bad">KO</span></td>
+            <td>13</td>
+            <td>6</td>
+          </tr>
+        
+          <tr>
+            <td>Token Provider Copy</td>
+            <td>201</td>
+            <td>55 ms</td>
+            <td>463 B</td>
+            <td><span class="mini-badge bad">KO</span></td>
+            <td>13</td>
+            <td>6</td>
+          </tr>
+        
+            </tbody>
+          </table>
+        </div>
+      </section>
+    
+      <section class="detail-card" id="group-api-management-iss-cms4-001-api">
+        <div class="detail-title-row">
+          <div>
+            <h3>API Management_ISS_CMS4_001 (API)</h3>
+            <div class="subtle">Occurrences groupées : 1 • Dossiers : Access Management • Codes réponse : 201</div>
+          </div>
+          <div><div class="quick-actions"><a href="#" onclick="gilShowSection(this); return false;">Ouvrir</a><a href="#" onclick="gilFocusBox(this,'ok'); return false;">Zone OK</a><a href="#" onclick="gilFocusBox(this,'ko'); return false;">Zone KO</a><span class="close-detail" onclick="gilCloseSection(this)">Fermer</span></div></div><div class="detail-meta">
+            <span class="meta-pill">Temps moyen 49 ms</span>
+            <span class="meta-pill">Taille moyenne 463 B</span>
+            <span class="meta-pill bad">6 KO</span>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-box" id="ok-api-management-iss-cms4-001-api">
+            <h4>Assertions OK</h4>
+            
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response time &lt; 2s</strong><span>1 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response is JSON</strong><span>1 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Should return 400 if bad request</strong><span>1 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Status OK or ERROR</strong><span>1 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response time OK</strong><span>1 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response not empty</strong><span>1 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>No error in response</strong><span>1 OK</span></div>
+            </div>
+          </div>
+          <div class="detail-box" id="ko-api-management-iss-cms4-001-api">
+            <h4>Assertions KO</h4>
+            
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Status code is 201</strong><span>1 KO</span></div>
+              <div class="detail-msg">expected response to have status code 200 but got 201</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Response has agreementId</strong><span>1 KO</span></div>
+              <div class="detail-msg">expected { card: { …(8) }, …(2) } to have property &#x27;agreementId&#x27;</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>AgreementId not empty</strong><span>1 KO</span></div>
+              <div class="detail-msg">.empty was passed non-string primitive undefined</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Check response structure</strong><span>1 KO</span></div>
+              <div class="detail-msg">expected { card: { …(8) }, …(2) } to have property &#x27;status&#x27;</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Business KPI - Valid response</strong><span>1 KO</span></div>
+              <div class="detail-msg">expected 201 to deeply equal 200</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>HTTP 200 OK</strong><span>1 KO</span></div>
+              <div class="detail-msg">expected response to have status code 200 but got 201</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="runs-box">
+          <h4>Occurrences détaillées</h4>
+          <table class="nested-table">
+            <thead>
+              <tr><th>Dossier</th><th>Code</th><th>Temps</th><th>Taille</th><th>Statut</th><th>Assertions</th><th>KO</th></tr>
+            </thead>
+            <tbody>
+              
+          <tr>
+            <td>Access Management</td>
+            <td>201</td>
+            <td>49 ms</td>
+            <td>463 B</td>
+            <td><span class="mini-badge bad">KO</span></td>
+            <td>13</td>
+            <td>6</td>
+          </tr>
+        
+            </tbody>
+          </table>
+        </div>
+      </section>
+    
+      <section class="detail-card" id="group-identity-access-management-iss-cms4-001-api">
+        <div class="detail-title-row">
+          <div>
+            <h3>Identity &amp; Access management_ISS_CMS4_001 (API)</h3>
+            <div class="subtle">Occurrences groupées : 1 • Dossiers : Access Management • Codes réponse : 201</div>
+          </div>
+          <div><div class="quick-actions"><a href="#" onclick="gilShowSection(this); return false;">Ouvrir</a><a href="#" onclick="gilFocusBox(this,'ok'); return false;">Zone OK</a><a href="#" onclick="gilFocusBox(this,'ko'); return false;">Zone KO</a><span class="close-detail" onclick="gilCloseSection(this)">Fermer</span></div></div><div class="detail-meta">
+            <span class="meta-pill">Temps moyen 55 ms</span>
+            <span class="meta-pill">Taille moyenne 463 B</span>
+            <span class="meta-pill bad">6 KO</span>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-box" id="ok-identity-access-management-iss-cms4-001-api">
+            <h4>Assertions OK</h4>
+            
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response time &lt; 2s</strong><span>1 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response is JSON</strong><span>1 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Should return 400 if bad request</strong><span>1 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Status OK or ERROR</strong><span>1 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response time OK</strong><span>1 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response not empty</strong><span>1 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>No error in response</strong><span>1 OK</span></div>
+            </div>
+          </div>
+          <div class="detail-box" id="ko-identity-access-management-iss-cms4-001-api">
+            <h4>Assertions KO</h4>
+            
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Status code is 201</strong><span>1 KO</span></div>
+              <div class="detail-msg">expected response to have status code 200 but got 201</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Response has agreementId</strong><span>1 KO</span></div>
+              <div class="detail-msg">expected { card: { …(8) }, …(2) } to have property &#x27;agreementId&#x27;</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>AgreementId not empty</strong><span>1 KO</span></div>
+              <div class="detail-msg">.empty was passed non-string primitive undefined</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Check response structure</strong><span>1 KO</span></div>
+              <div class="detail-msg">expected { card: { …(8) }, …(2) } to have property &#x27;status&#x27;</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Business KPI - Valid response</strong><span>1 KO</span></div>
+              <div class="detail-msg">expected 201 to deeply equal 200</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>HTTP 200 OK</strong><span>1 KO</span></div>
+              <div class="detail-msg">expected response to have status code 200 but got 201</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="runs-box">
+          <h4>Occurrences détaillées</h4>
+          <table class="nested-table">
+            <thead>
+              <tr><th>Dossier</th><th>Code</th><th>Temps</th><th>Taille</th><th>Statut</th><th>Assertions</th><th>KO</th></tr>
+            </thead>
+            <tbody>
+              
+          <tr>
+            <td>Access Management</td>
+            <td>201</td>
+            <td>55 ms</td>
+            <td>463 B</td>
+            <td><span class="mini-badge bad">KO</span></td>
+            <td>13</td>
+            <td>6</td>
+          </tr>
+        
+            </tbody>
+          </table>
+        </div>
+      </section>
+    
+      <section class="detail-card" id="group-appel-du-service-de-chiffrement-d-chiffrrement-du-panchiffr-iss-cms4-001-api">
+        <div class="detail-title-row">
+          <div>
+            <h3>Appel du service de chiffrement / déchiffrrement du panchiffré_ISS_CMS4_001 (API)</h3>
+            <div class="subtle">Occurrences groupées : 1 • Dossiers : Encryption/ Decryption • Codes réponse : 201</div>
+          </div>
+          <div><div class="quick-actions"><a href="#" onclick="gilShowSection(this); return false;">Ouvrir</a><a href="#" onclick="gilFocusBox(this,'ok'); return false;">Zone OK</a><a href="#" onclick="gilFocusBox(this,'ko'); return false;">Zone KO</a><span class="close-detail" onclick="gilCloseSection(this)">Fermer</span></div></div><div class="detail-meta">
+            <span class="meta-pill">Temps moyen 55 ms</span>
+            <span class="meta-pill">Taille moyenne 463 B</span>
+            <span class="meta-pill bad">6 KO</span>
+          </div>
+        </div>
+
+        <div class="detail-grid">
+          <div class="detail-box" id="ok-appel-du-service-de-chiffrement-d-chiffrrement-du-panchiffr-iss-cms4-001-api">
+            <h4>Assertions OK</h4>
+            
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response time &lt; 2s</strong><span>1 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response is JSON</strong><span>1 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Should return 400 if bad request</strong><span>1 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Status OK or ERROR</strong><span>1 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response time OK</strong><span>1 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>Response not empty</strong><span>1 OK</span></div>
+            </div>
+            <div class="detail-item pass-item">
+              <div class="detail-head"><strong>No error in response</strong><span>1 OK</span></div>
+            </div>
+          </div>
+          <div class="detail-box" id="ko-appel-du-service-de-chiffrement-d-chiffrrement-du-panchiffr-iss-cms4-001-api">
+            <h4>Assertions KO</h4>
+            
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Status code is 201</strong><span>1 KO</span></div>
+              <div class="detail-msg">expected response to have status code 200 but got 201</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Response has agreementId</strong><span>1 KO</span></div>
+              <div class="detail-msg">expected { card: { …(8) }, …(2) } to have property &#x27;agreementId&#x27;</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>AgreementId not empty</strong><span>1 KO</span></div>
+              <div class="detail-msg">.empty was passed non-string primitive undefined</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Check response structure</strong><span>1 KO</span></div>
+              <div class="detail-msg">expected { card: { …(8) }, …(2) } to have property &#x27;status&#x27;</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>Business KPI - Valid response</strong><span>1 KO</span></div>
+              <div class="detail-msg">expected 201 to deeply equal 200</div>
+            </div>
+            <div class="detail-item failed-item">
+              <div class="detail-head"><strong>HTTP 200 OK</strong><span>1 KO</span></div>
+              <div class="detail-msg">expected response to have status code 200 but got 201</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="runs-box">
+          <h4>Occurrences détaillées</h4>
+          <table class="nested-table">
+            <thead>
+              <tr><th>Dossier</th><th>Code</th><th>Temps</th><th>Taille</th><th>Statut</th><th>Assertions</th><th>KO</th></tr>
+            </thead>
+            <tbody>
+              
+          <tr>
+            <td>Encryption/ Decryption</td>
+            <td>201</td>
+            <td>55 ms</td>
+            <td>463 B</td>
+            <td><span class="mini-badge bad">KO</span></td>
+            <td>13</td>
+            <td>6</td>
+          </tr>
+        
+            </tbody>
+          </table>
+        </div>
+      </section>
+    
+
+  <div class="footer">Source intégrée dans le fichier • impression PDF prise en charge • liens HTML actifs vers les détails</div>
+</div>
+
+<script>
+(function(){
+  const detailCards = Array.from(document.querySelectorAll('.detail-card'));
+  const groupedRows = Array.from(document.querySelectorAll('.section table tbody tr'));
+
+  function normalizeHash(hash){ return (hash||'').replace(/^#/, ''); }
+  function cardByHash(hash){ const id = normalizeHash(hash); return document.getElementById(id); }
+
+  window.gilHideAllDetails = function(){
+    detailCards.forEach(c=>c.classList.remove('active'));
+    groupedRows.forEach(r=>r.classList.remove('active-row'));
+  };
+
+  window.gilShowAllDetails = function(){
+    detailCards.forEach(c=>c.classList.add('active'));
+    groupedRows.forEach(r=>r.classList.remove('active-row'));
+  };
+
+  function focusCard(card){
+    if(!card) return;
+    gilHideAllDetails();
+    card.classList.add('active');
+    card.scrollIntoView({behavior:'smooth', block:'start'});
+  }
+
+  function focusElement(el){
+    if(!el) return;
+    el.classList.add('focus-ring');
+    setTimeout(()=>el.classList.remove('focus-ring'), 1600);
+  }
+
+  window.gilShowSection = function(el){
+    const card = el.closest('.detail-card');
+    if(card){ card.classList.add('active'); card.scrollIntoView({behavior:'smooth', block:'start'}); }
+  };
+
+  window.gilCloseSection = function(el){
+    const card = el.closest('.detail-card');
+    if(card) card.classList.remove('active');
+  };
+
+  window.gilFocusBox = function(el, type){
+    const card = el.closest('.detail-card');
+    if(!card) return;
+    card.classList.add('active');
+    const target = card.querySelector(type === 'ko' ? '.detail-box[id^="ko-"]' : '.detail-box[id^="ok-"]');
+    if(target){
+      target.scrollIntoView({behavior:'smooth', block:'center'});
+      focusElement(target);
+    }
+  };
+
+  window.gilFilterItems = function(mode){
+    detailCards.forEach(card=>{
+      card.classList.add('active');
+      card.querySelectorAll('.detail-item').forEach(item=>{
+        item.classList.remove('hidden-by-filter');
+        if(mode === 'ko' && !item.classList.contains('failed-item')) item.classList.add('hidden-by-filter');
+        if(mode === 'ok' && !item.classList.contains('pass-item')) item.classList.add('hidden-by-filter');
+      });
+    });
+    if(mode === 'all') return;
+  };
+
+  document.querySelectorAll('.flow-link').forEach(link=>{
+    link.addEventListener('click', function(e){
+      e.preventDefault();
+      const card = cardByHash(this.getAttribute('href'));
+      focusCard(card);
+      const row = this.closest('tr');
+      groupedRows.forEach(r=>r.classList.remove('active-row'));
+      if(row) row.classList.add('active-row');
+    });
+  });
+
+  document.querySelectorAll('.anchor-link').forEach(link=>{
+    link.addEventListener('click', function(e){
+      e.preventDefault();
+      const target = cardByHash(this.getAttribute('href'));
+      if(!target) return;
+      const card = target.closest('.detail-card');
+      if(card){
+        focusCard(card);
+        target.scrollIntoView({behavior:'smooth', block:'center'});
+        focusElement(target);
+      }
+      const row = this.closest('tr');
+      groupedRows.forEach(r=>r.classList.remove('active-row'));
+      if(row) row.classList.add('active-row');
+    });
+  });
+})();
+</script>
+
+</body>
+</html>
