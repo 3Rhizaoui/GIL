@@ -1,0 +1,39 @@
+java \
+-Dhttp.proxyHost=vip-b-prx-pf-internet.xpf.net.intra \
+-Dhttp.proxyPort=3128 \
+-Dhttps.proxyHost=vip-b-prx-pf-internet.xpf.net.intra \
+-Dhttps.proxyPort=3128 \
+-jar octane-collection-tool-1.0.6.jar \
+-url https://alm-octane-eur.saas.microfocus.com \
+-space 489001 \
+-workspace 104001 \
+-file results.xml \
+-clientId XXXXX \
+-clientSecret XXXXX
+
+
+java -jar octane-collection-tool.jar \
+-url https://alm-octane-eur.saas.microfocus.com \
+-space 489001 \
+-workspace 104001 \
+-file results.xml \
+-clientId XXXXX \
+-clientSecret XXXXX
+
+///////////////
+java ^
+-Dhttp.proxyHost=vip-b-prx-pf-internet.xpf.net.intra ^
+-Dhttp.proxyPort=3128 ^
+-Dhttps.proxyHost=vip-b-prx-pf-internet.xpf.net.intra ^
+-Dhttps.proxyPort=3128 ^
+-Djavax.net.debug=ssl,handshake ^
+-Djava.net.useSystemProxies=true ^
+-jar octane-collection-tool-1.0.6.jar ^
+-url https://alm-octane-eur.saas.microfocus.com ^
+-space 489001 ^
+-workspace 104001 ^
+-file results.xml ^
+-clientId XXXXX ^
+-clientSecret XXXXX ^
+-debug true ^
+> debug_octane.log
