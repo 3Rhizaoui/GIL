@@ -199,3 +199,99 @@ E2E --> POSTMAN
 REPORT --> DOC : Amélioration continue
 
 @enduml
+
+
+////////////
+@startuml
+title GIL - Workflow Testing Industrialise
+
+skinparam rectangle {
+  BackgroundColor #F8F9FA
+  BorderColor black
+}
+
+skinparam shadowing false
+
+' =========================
+' PHASE DE CONCEPTION
+' =========================
+rectangle "PHASE DE CONCEPTION" #E8F5E9 {
+
+  rectangle "Confluence / SharePoint\nDocumentation" as DOC {
+    :Specs fonctionnelles;
+    :Specs techniques API;
+    :Contrats JSON / AVRO;
+    :Diagrammes UML;
+  }
+
+  rectangle "JIRA\nBacklog" as JIRA {
+    :Epics / Features;
+    :User Stories;
+    :Acceptance Criteria;
+  }
+
+  rectangle "Octane\nTest Design" as OCTANE_DESIGN {
+    :Requirements;
+    :Test Cases;
+    :Test Suites;
+  }
+
+  DOC --> JIRA
+  JIRA --> OCTANE_DESIGN
+}
+
+' =========================
+' PHASE EXECUTION
+' =========================
+rectangle "PHASE EXECUTION" #FFF3E0 {
+
+  rectangle "Preparation des tests (Octane)" as PREP
+  rectangle "Postman API Tests" as POSTMAN
+  rectangle "Newman Execution" as NEWMAN
+  rectangle "CI/CD Pipeline" as CICD
+  rectangle "Octane Execution" as OCTANE_EXEC
+  rectangle "JIRA Bugs" as BUG
+  rectangle "Reporting" as REPORT
+
+  OCTANE_DESIGN --> PREP
+  PREP --> POSTMAN
+  POSTMAN --> NEWMAN
+  NEWMAN --> CICD
+  CICD --> OCTANE_EXEC
+
+  OCTANE_EXEC --> BUG
+  BUG --> OCTANE_EXEC
+
+  OCTANE_EXEC --> REPORT
+  NEWMAN --> REPORT
+}
+
+' =========================
+' CAMPAGNE SIT
+' =========================
+rectangle "Campagne SIT" #E3F2FD {
+  rectangle "API to API (CMS4_001)" as F1
+  rectangle "API to EVENT (OA3_002)" as F2
+}
+
+PREP --> F1
+PREP --> F2
+F1 --> POSTMAN
+F2 --> POSTMAN
+
+' =========================
+' CAMPAGNE E2E
+' =========================
+rectangle "Campagne E2E" #FCE4EC {
+  rectangle "Parcours metier complet" as E2E
+}
+
+PREP --> E2E
+E2E --> POSTMAN
+
+' =========================
+' FEEDBACK
+' =========================
+REPORT --> DOC : Amelioration continue
+
+@enduml
