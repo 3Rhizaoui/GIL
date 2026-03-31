@@ -463,3 +463,88 @@ E2E --> POSTMAN
 REPORT --> DOC : Amelioration continue
 
 @enduml
+´´´´´´´´´´
+@startuml
+left to right direction
+skinparam linetype ortho
+skinparam shadowing false
+
+skinparam rectangle {
+  BackgroundColor #F8F9FA
+  BorderColor black
+}
+
+title GIL - Workflow Testing Industrialise
+
+' =========================
+' CONCEPTION (GAUCHE)
+' =========================
+package "PHASE DE CONCEPTION" #E8F5E9 {
+
+  rectangle "Confluence / SharePoint\nSpecs" as DOC
+  rectangle "JIRA\nUser Stories" as JIRA
+  rectangle "Octane\nTest Design" as OCTANE_DESIGN
+
+  DOC --> JIRA
+  JIRA --> OCTANE_DESIGN
+}
+
+' =========================
+' EXECUTION (DROITE)
+' =========================
+package "PHASE D'EXECUTION" #FFF3E0 {
+
+  rectangle "Preparation\nCampagnes" as PREP
+  rectangle "Postman\nAPI Tests" as POSTMAN
+  rectangle "Newman\nExecution" as NEWMAN
+  rectangle "CI/CD\nPipeline" as CICD
+  rectangle "Octane\nExecution" as OCTANE_EXEC
+  rectangle "JIRA\nBugs" as BUG
+  rectangle "Reporting\nDashboards" as REPORT
+
+  PREP --> POSTMAN
+  POSTMAN --> NEWMAN
+  NEWMAN --> CICD
+  CICD --> OCTANE_EXEC
+
+  OCTANE_EXEC --> BUG : KO
+  BUG --> OCTANE_EXEC : Fix OK
+
+  OCTANE_EXEC --> REPORT
+  NEWMAN --> REPORT
+}
+
+' =========================
+' CAMPAGNES
+' =========================
+package "Campagne SIT" #E3F2FD {
+  rectangle "API → API\nCMS4_001" as F1
+  rectangle "API → EVENT\nOA3_002" as F2
+}
+
+package "Campagne E2E" #FCE4EC {
+  rectangle "Parcours metier complet\nE2E" as E2E
+}
+
+' =========================
+' 🔥 LIEN STRUCTURANT (CRITIQUE)
+' =========================
+OCTANE_DESIGN -right-> PREP
+
+' =========================
+' LIENS CAMPAGNES
+' =========================
+PREP --> F1
+PREP --> F2
+PREP --> E2E
+
+F1 --> POSTMAN
+F2 --> POSTMAN
+E2E --> POSTMAN
+
+' =========================
+' FEEDBACK
+' =========================
+REPORT --> DOC : Amelioration continue
+
+@enduml
