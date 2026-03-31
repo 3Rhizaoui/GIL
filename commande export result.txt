@@ -59,3 +59,143 @@ java ^
 --proxy-port 3128 ^
 --debug true ^
 > debug_octane.log
+///////////////////
+@startuml
+title GIL - Workflow Testing Industrialisé (Confluence / JIRA / Octane / Postman / Newman)
+
+skinparam rectangle {
+  BackgroundColor #F8F9FA
+  BorderColor black
+}
+
+skinparam shadowing false
+
+' =========================
+' PHASE DE CONCEPTION
+' =========================
+rectangle "PHASE DE CONCEPTION" #E8F5E9 {
+
+  rectangle "Confluence / SharePoint\n📘 Documentation" as DOC {
+    :Specs fonctionnelles;
+    :Specs techniques API;
+    :Contrats JSON / AVRO;
+    :Diagrammes UML;
+  }
+
+  rectangle "JIRA\n🎯 Backlog" as JIRA {
+    :Epics / Features;
+    :User Stories;
+    :Acceptance Criteria;
+  }
+
+  rectangle "Octane\n🧪 Test Design" as OCTANE_DESIGN {
+    :Requirements;
+    :Test Cases;
+    :Test Suites;
+    :Traçabilité;
+  }
+
+  DOC --> JIRA
+  JIRA --> OCTANE_DESIGN
+}
+
+' =========================
+' PHASE D’EXECUTION
+' =========================
+rectangle "PHASE D’EXECUTION (Sprints)" #FFF3E0 {
+
+  rectangle "Préparation des tests\n(OCTANE)" as PREP {
+    :Planification campagnes;
+    :Sélection suites;
+  }
+
+  rectangle "Postman\n🔌 API Tests" as POSTMAN {
+    :Collections;
+    :Assertions JS;
+    :Environnements;
+  }
+
+  rectangle "Newman\n⚙️ Execution CLI" as NEWMAN {
+    :Run collections;
+    :Batch execution;
+  }
+
+  rectangle "CI/CD Pipeline\n🚀 Jenkins / GitLab" as CICD {
+    :Trigger auto;
+    :Execution tests;
+  }
+
+  rectangle "Octane\n📊 Test Execution" as OCTANE_EXEC {
+    :Runs;
+    :Résultats;
+    :Suivi campagne;
+  }
+
+  rectangle "JIRA\n🐞 Gestion anomalies" as BUG {
+    :Création bugs;
+    :Suivi correction;
+  }
+
+  rectangle "Reporting\n📈 KPI & Dashboards" as REPORT {
+    :HTML Newman;
+    :Dashboards Octane;
+    :Confluence;
+  }
+
+  OCTANE_DESIGN --> PREP
+  PREP --> POSTMAN
+  POSTMAN --> NEWMAN
+  NEWMAN --> CICD
+  CICD --> OCTANE_EXEC
+
+  OCTANE_EXEC --> BUG : KO
+  BUG --> OCTANE_EXEC : Fix OK
+
+  OCTANE_EXEC --> REPORT
+  NEWMAN --> REPORT
+}
+
+' =========================
+' CAMPAGNE 1 (SIT)
+' =========================
+rectangle "Campagne de test #1 (SIT)" #E3F2FD {
+
+  rectangle "Flux API → API\n(CMS4_001)" as F1 {
+    :Tests synchro;
+    :Validation réponse;
+  }
+
+  rectangle "Flux API → EVENT\n(OA3_002)" as F2 {
+    :Publication Kafka;
+    :Validation event;
+  }
+
+}
+
+PREP --> F1
+PREP --> F2
+F1 --> POSTMAN
+F2 --> POSTMAN
+
+' =========================
+' CAMPAGNE 2 (E2E)
+' =========================
+rectangle "Campagne de test #2 (E2E)" #FCE4EC {
+
+  rectangle "Parcours métier complet" as E2E {
+    :Enchaînement API;
+    :Multi systèmes;
+    :Validation globale;
+  }
+
+}
+
+PREP --> E2E
+E2E --> POSTMAN
+
+' =========================
+' BOUCLE D’AMELIORATION
+' =========================
+REPORT --> DOC : Amélioration continue
+
+@enduml
